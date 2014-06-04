@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="sput.js"></script>
+	<script>
+	window.addEventListener('load', function(){
+		Sput.prepare();
+	});
+	</script>
+    <style>
+        button.trigger
+        {
+        	font-family: "Segoe UI Symbol";
+            background-color: transparent;
+            font-size: 18px;
+            padding: 0;
+            position: relative;
+            border: 0;
+            cursor: pointer;
+        }
+        
+        button.trigger > * 
+        {
+        	position:relative;
+        	z-index: 1;
+        }
+        
+        button.trigger > .background
+        {
+        	background-color: red;
+        	width: 2px;
+        	height: 2px;
+        	position:absolute;
+        	left: 13px;
+        	top: 13px;
+            z-index:0;
+        }
+    </style>
+</head>
+<body>
+<input id="auto" x-webkit-speech />
+<input id="manual" />
+</body>
+</html>
