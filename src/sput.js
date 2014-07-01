@@ -15,7 +15,7 @@ var Sput = new function () {
         userMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
     }
 
-    function findAnimationTransform() luizg{
+    function findAnimationTransform() {
         var test = document.createElement('span');
 
         var attempts = ['transform', 'webkitTransform', 'msTransform', 'mzTransform', 'oTransform'];
