@@ -1,0 +1,59 @@
+button.sput-trigger
+{
+	font-family: "Segoe UI Symbol";
+	background-color: transparent;
+	font-size: inherit;
+	padding: 0;
+	position: relative;
+	border: 0;
+	cursor: pointer;
+	margin: 0;
+	outline: 
+}
+
+button.sput-trigger > * 
+{
+	position:relative;
+	z-index: 1;
+}
+
+button.sput-trigger > .sput-trigger-bg
+{
+	background-color: red;
+	width: 2px;
+	height: 2px;
+	position:absolute;
+	left: 13px;
+	top: 13px;
+	z-index:0;
+	display: none;
+	border-radius: 1px;
+}
+
+.sput-listening > button.sput-trigger > .sput-trigger-bg
+{
+	display:block;
+}
+
+
+.sput-input{
+	border: none;
+	outline: none;
+	margin: 0;
+	padding: 0 1px 0 0;
+}
+
+.sput-container{
+	display: inline-block;
+	border: 1px solid #000;
+	margin: 2px;
+	padding: 1px;
+	appearance:textfield;
+	-moz-appearance:textfield;
+	-webkit-appearance:textfield;
+}
+
+.sput-container.sput-listening, .sput-container.sput-focus
+{
+	outline: lightsalmon auto 5px;
+}

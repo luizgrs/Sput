@@ -9,8 +9,10 @@ var Sput = new function () {
     var current_trigger = null;
     var transformProp = null;
     var trigger_inputs = {};
+	var classes = { trigger: 'sput-trigger', triggerBg: 'sput-trigger-bg', container: 'sput-container', input: 'sput-input', listening: 'sput-listening' };
+	var debug = false;
 
-
+	
     function findUserMedia() {
         userMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
     }
@@ -58,33 +60,17 @@ var Sput = new function () {
     }
 
     function handleRecognitionResult(e) {
-        console.log('We have a result', e);
+		debugLog('We have a result', e);
+			
         var input = getInput(current_trigger);
         if (e.results.length > 0)
             input.setAttribute('value', e.results[0][0].transcript);
     }
 
-    function setupInput(input) {
-        var trigger = document.createElement('button');
-        trigger.setAttribute('class', 'trigger');
-
-        var label = document.createElement('span');
-        label.innerHTML = '&#127908;';
-        trigger.appendChild(label);
-
-        var bg = document.createElement('div');
-        bg.setAttribute('class', 'background');
-        trigger.appendChild(bg);
-
-        setInput(trigger, input);
-        trigger.addEventListener('click', captureAudio);
-        input.parentNode.appendChild(trigger);
-    }
-
     function onRecognitionStart(e) {
+		debugLog('Starting listening for audio input...');
 
-        console.log('Starting listening for audio input...');
-        current_trigger.querySelector('.background').style.display = 'block';
+        current_trigger.parentNode.classList.add(classes.listening);
         if (userMedia && audioContext) {
             userMedia.call(navigator, { audio: true }, function (stream) {
                 if (current_trigger != null) {
@@ -98,7 +84,7 @@ var Sput = new function () {
                     stream.stop();
                 }
             }, function () {
-                console.log('getuserMedia failed');
+				debugLog('getuserMedia failed');
             });
         };
     }
@@ -127,10 +113,8 @@ var Sput = new function () {
             if (isNaN(size))
                 size = 1;
 
-            var bg = current_trigger.querySelector('.background');
-            bg.style.display = '';
+            var bg = current_trigger.querySelector('.'+classes.triggerBg);
             bg.style[transformProp] = 'scale(' + size + ',' + size + ')';
-            bg.style.borderRadius = size + 'px';
 
             window.requestAnimationFrame(updateTriggerAnimation);
         }
@@ -139,7 +123,7 @@ var Sput = new function () {
 
     function onRecognitionEnd(e) {
         getInput(current_trigger).removeAttribute('readOnly');
-        current_trigger.querySelector('.background').style.display = 'none';
+        current_trigger.parentNode.classList.remove(classes.listening);
         current_trigger = null;
 
         if (micUserMedia) {
@@ -149,7 +133,7 @@ var Sput = new function () {
                 micUserMedia.mediaStream.stop();
         }
 
-        console.log('Stopped listening for audio input...');
+		debugLog('Stopped listening for audio input...');
     }
 
     function stopAudioCapture() {
@@ -160,10 +144,69 @@ var Sput = new function () {
         return trigger_inputs[trigger];
     }
 
+	function onInputFocus(e){
+		e.currentTarget.parentNode.classList.add('sput-focus');
+	}
+	
+	function onInputBlur(e){
+		e.currentTarget.parentNode.classList.remove('sput-focus');
+	}	
+	
     function setInput(trigger, input) {
         trigger_inputs[trigger] = input;
     }
+	
+	function setupInput(input, options) {
 
+		input.addEventListener('focus', onInputFocus);
+		input.addEventListener('blur', onInputBlur);
+		
+		
+		var inputComputedStyle = window.getComputedStyle(input);
+
+		
+		var container = document.createElement('div');
+		container.classList.add(classes.container);
+		input.parentNode.insertBefore(container, input);
+		container.appendChild(input);
+		
+		container.style.fontSize = inputComputedStyle.fontSize;
+
+        var trigger = document.createElement('button');
+        trigger.classList.add(classes.trigger);
+        trigger.addEventListener('click', captureAudio);
+        container.appendChild(trigger);
+		
+		var label;
+		if(!options.triggerLabel || !options.triggerLabel.cloneNode)
+		{
+			label = document.createElement('span');
+			
+			if (typeof options.triggerLabel == 'string')
+				label.innerText = options.triggerLabel;
+			else
+				label.innerHTML = '&#127908;';
+		}
+		else 
+			label = options.triggerLabel.cloneNode(true);
+        
+		trigger.appendChild(label);
+
+		//create BG but do not position it yet because the trigger may be invisible
+        var bg = document.createElement('div');
+        bg.classList.add(classes.triggerBg);
+        trigger.appendChild(bg);
+
+		input.classList.add(classes.input);
+		
+		//only get width/height after applying our class
+		if(options.adjustInputSize != false)
+			input.style.width = (input.offsetWidth - trigger.offsetWidth) + 'px';
+		trigger.style.height = input.offsetHeight + 'px';
+        
+		setInput(trigger, input);
+    }
+	
     function captureAudio(e) {
         var trigger = e.currentTarget;
         var input = getInput(trigger);
@@ -178,23 +221,46 @@ var Sput = new function () {
         input.setAttribute('readOnly', 'readOnly');
         current_trigger = trigger;
         input.setAttribute('value', '');
+		
+		//position trigger background
+		var bg = trigger.querySelector('.'+classes.triggerBg);
+		bg.style.top = ((trigger.offsetHeight / 2) - (bg.offsetHeight / 2)) + 'px';
+		bg.style.left = ((trigger.offsetWidth / 2) - (bg.offsetWidth / 2)) + 'px';
+		
         recognition.start();
     }
 
+	function debugLog(){
+		if(debug && arguments.length > 0)
+			console.log.apply(console, arguments);
+	}
+	
+	
+	//options = { triggerLabel: htmlElementToBeUsedInsideButtonTrigger, debug: true/false, adjustInputSize: false/true }
     me.prepare = function (inputs, options) {
+		if(!options)
+			options = {};	
+	
+		if(options.debug !== undefined)
+			debug = options.debug;
+			
         if (!recognition) {
-            console.log('This browser does not support the Web Speech API');
+			debugLog('This browser does not support the Web Speech API');
             return;
         }
         if (!inputs) inputs = document.querySelectorAll('input[x-webkit-speech]');
 
         if (!inputs)
             return;
+			
 
-        var x;
-        for (x = 0; x < inputs.length; x++)
-            setupInput(inputs[x]);
-
+		if(inputs.length)
+		{
+			for (var x = 0; x < inputs.length; x++)
+				setupInput(inputs[x], options);
+		}
+		else
+			setupInput(inputs, options);
     }
 
     findRecognition();
